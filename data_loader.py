@@ -7,6 +7,8 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
+import cv2
+
 
 class TrainDataset(Dataset):
 
@@ -20,6 +22,7 @@ class TrainDataset(Dataset):
             the desired output size
         """
         super(TrainDataset, self).__init__()
+
         self.target_size = target_size
         self.data = data
 
@@ -33,6 +36,10 @@ class TrainDataset(Dataset):
         img = transforms.Pad(((img.height - img.width) // 2, 0), fill=0)(img)
         # Resize
         img = img.resize(self.target_size, Image.BICUBIC)
+
+        # Convert to RGB (3 channels)
+        img = img.convert('RGB')
+
         # Convert to tensor
         img = transforms.ToTensor()(img)
 
@@ -40,7 +47,7 @@ class TrainDataset(Dataset):
 
 
 class TrainDataModule(pl.LightningDataModule):
-    def __init__(self, split_dir: str, target_size=(128, 128), batch_size: int = 32):
+    def __init__(self, split_dir: str, target_size=(128, 128), batch_size: int=32):
         """
         Data module for training
 
@@ -114,6 +121,10 @@ class TestDataset(Dataset):
         # Load image
         img = Image.open(self.img_paths[idx]).convert('L')
         img = img.resize(self.target_size, Image.BICUBIC)
+
+        # Convert to RGB (3 channels)
+        img = img.convert('RGB')
+
         img = transforms.ToTensor()(img)
 
         # Load positive mask

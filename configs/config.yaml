@@ -1,0 +1,9 @@
+seed: 42
+split_dir: ./data/splits
+target_size: !<tag:yaml.org,2002:seq> [128,128]
+batch_size: 32
+sampling_percentage: 0.1
+backbone: wideresnet50
+layers_to_extract_from: 0
+neighbour_num: 1
+diseases: ['absent_septum', 'edema', 'enlarged_ventricles', 'mass', 'dural']

@@ -14,6 +14,7 @@ import patchcore.backbones
 import patchcore.common
 import patchcore.sampler
 import patchcore.utils
+import patchcore.metrics
 
 from data_loader import TrainDataModule, get_all_test_dataloaders
 from torch.utils.data import DataLoader
@@ -58,7 +59,8 @@ class PatchCoreModel():
         test_dataloaders = get_all_test_dataloaders(
             split_dir=self.split_dir,
             target_size=self.target_size,
-            batch_size=self.batch_size)
+            batch_size=self.batch_size,
+            image_is_dict=True) # set this flag to True to give test images anomaly labels
 
         return test_dataloaders
 
@@ -107,12 +109,17 @@ class PatchCoreModel():
         # Create the dataloaders
         test_dataloaders = self.get_test_dataloaders()
 
+        # Create a test folder to store the results
+        save_path = os.path.join(results_path, "test")
+        os.makedirs(save_path, exist_ok=True)
+
+        result_collect = {}
         # Embed test data with model
         for i in range(len(self.diseases)):
             print("Testing on disease: ", self.diseases[i])
-            scores, segmentations, labels_gt, masks_gt  = self.test(test_dataloaders[self.diseases[i]])
-            # Get predictions
-            scores, segmentations, labels_gt, masks_gt = self.model.predict(test_dataloader)
+
+            # Get predictions for each disease
+            scores, segmentations, labels_gt, masks_gt  = self.model.predict(test_dataloaders[self.diseases[i]])
             
             # Normalize scores and segmentations
             scores = np.array(scores)
@@ -133,7 +140,49 @@ class PatchCoreModel():
                 .reshape(-1, 1, 1, 1)
             )
             segmentations = (segmentations - min_scores) / (max_scores - min_scores)
-            segmentations = np.mean(segmentations, axis=0)       
+            segmentations = np.mean(segmentations, axis=0) 
+            
+            ########################### check again if anomaly_labels missing == labels_gt (line 134)############################################
 
-            # TO DO: Anomaly labels missing (line 134)
-            # TO DO: Metrics missing 
+            # Compute evaluation metrics
+            auroc = patchcore.metrics.compute_imagewise_retrieval_metrics(scores, labels_gt)["auroc"] # labels_gt was anomaly_labels
+            
+            # Compute PRO score & PW Auroc for all images
+            pixel_scores = patchcore.metrics.compute_pixelwise_retrieval_metrics(
+                segmentations, masks_gt)
+            full_pixel_auroc = pixel_scores["auroc"]
+
+            # Compute PRO score & PW Auroc only images with anomalies
+            sel_idxs = []
+            for i in range(len(masks_gt)):
+                if np.sum(masks_gt[i]) > 0:
+                    sel_idxs.append(i)
+            pixel_scores = patchcore.metrics.compute_pixelwise_retrieval_metrics(
+                [segmentations[i] for i in sel_idxs],
+                [masks_gt[i] for i in sel_idxs],
+            )
+            anomaly_pixel_auroc = pixel_scores["auroc"]     
+
+            # Save results
+            result_collect[self.diseases[i]] = {
+                "segmentations": segmentations,
+                "instance_auroc": auroc,
+                "full_pixel_auroc": full_pixel_auroc,
+                "anomaly_pixel_auroc": anomaly_pixel_auroc,
+
+            }       
+
+        # Store PatchCore model for later re-use.
+        model.save_to_path(results_path)
+
+        # Calculate mean scores for each disease
+        all_mean_scores = {}
+        for i in range(len(self.diseases)):
+            disease_scores =  result_collect[self.diseases[i]]
+            mean_scores = {}
+            for score in disease_scores:
+                mean_scores[score] = np.mean(disease_scores[score])
+            all_mean_scores[self.diseases[i]] = mean_scores
+
+        print("All mean scores: ", all_mean_scores)
+

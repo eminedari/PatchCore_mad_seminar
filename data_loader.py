@@ -93,7 +93,7 @@ class TrainDataModule(pl.LightningDataModule):
 
 class TestDataset(Dataset):
 
-    def __init__(self, img_csv: str, pos_mask_csv: str, neg_mask_csv: str, target_size=(128, 128)):
+    def __init__(self, img_csv: str, pos_mask_csv: str, neg_mask_csv: str, target_size=(128, 128), image_is_dict=False):
         """
         Loads anomalous images, their positive masks and negative masks from data_dir
 
@@ -111,6 +111,7 @@ class TestDataset(Dataset):
         self.img_paths = pd.read_csv(img_csv)['filename'].tolist()
         self.pos_mask_paths = pd.read_csv(pos_mask_csv)['filename'].tolist()
         self.neg_mask_paths = pd.read_csv(neg_mask_csv)['filename'].tolist()
+        self.image_is_dict = image_is_dict
 
         assert len(self.img_paths) == len(self.pos_mask_paths) == len(self.neg_mask_paths)
 
@@ -137,10 +138,13 @@ class TestDataset(Dataset):
         neg_mask = neg_mask.resize(self.target_size, Image.NEAREST)
         neg_mask = transforms.ToTensor()(neg_mask)
 
+        if self.image_is_dict:
+            return {'image': img, 'mask': pos_mask, 'is_anomaly': True}
+
         return img, pos_mask, neg_mask
 
 
-def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, int], batch_size: int):
+def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, int], batch_size: int, image_is_dict=False):
     """
     Loads test data from split_dir
 
@@ -158,10 +162,11 @@ def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, 
     return DataLoader(TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size),
                       batch_size=batch_size,
                       shuffle=False,
-                      drop_last=False)
+                      drop_last=False,
+                      image_is_dict=image_is_dict)
 
 
-def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch_size: int):
+def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch_size: int, image_is_dict=False):
     """
     Loads all test data from split_dir
 
@@ -188,5 +193,5 @@ def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch
         'wml',
         'other'
     ]
-    return {pathology: get_test_dataloader(split_dir, pathology, target_size, batch_size)
+    return {pathology: get_test_dataloader(split_dir, pathology, target_size, batch_size, image_is_dict)
             for pathology in pathologies}

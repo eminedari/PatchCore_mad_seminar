@@ -105,7 +105,7 @@ class PatchCoreModel():
         self.model.fit(train_dataloader)
         print("model fitted")
 
-    def test(self, selftest_dataloader):
+    def test(self,):
         # Create the dataloaders
         test_dataloaders = self.get_test_dataloaders()
 

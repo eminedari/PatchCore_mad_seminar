@@ -159,11 +159,11 @@ def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, 
     pos_mask_csv = os.path.join(split_dir, f'{pathology}_ann.csv')
     neg_mask_csv = os.path.join(split_dir, f'{pathology}_neg.csv')
 
-    return DataLoader(TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size),
+    return DataLoader(TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size,image_is_dict=image_is_dict),
                       batch_size=batch_size,
                       shuffle=False,
                       drop_last=False,
-                      image_is_dict=image_is_dict)
+                    )
 
 
 def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch_size: int, image_is_dict=False):

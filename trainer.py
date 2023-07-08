@@ -41,8 +41,7 @@ class PatchCoreModel():
         self.layers_to_extract_from = layers_to_extract_from
         self.neighbour_num = neighbour_num
         self.diseases = diseases
-        
-        self._image_3d_size = (3, self.target_size[0], self.target_size[1])
+    
 
     def get_train_dataloaders(self):
         train_data_module = TrainDataModule(
@@ -71,6 +70,8 @@ class PatchCoreModel():
 
         # Create the dataloaders
         train_dataloader, val_dataloader= self.get_train_dataloaders()
+        examples = next(iter(train_dataloader))
+        self.image_3d_size = examples[0].shape
 
         # Fix the seeds for reproducibility
         patchcore.utils.fix_seeds(self.seed, self.device)

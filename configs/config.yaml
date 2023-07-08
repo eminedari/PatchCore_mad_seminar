@@ -7,3 +7,21 @@ backbone: wideresnet50
 layers_to_extract_from: 0
 neighbour_num: 1
 diseases: ['absent_septum', 'edema', 'enlarged_ventricles', 'mass', 'dural']
+pathologies: [
+        'absent_septum',
+        'artefacts',
+        'craniatomy',
+        'dural',
+        'ea_mass',
+        'edema',
+        'encephalomalacia',
+        'enlarged_ventricles',
+        'intraventricular',
+        'lesions',
+        'mass',
+        'posttreatment',
+        'resection',
+        'sinus',
+        'wml',
+        'other'
+    ]

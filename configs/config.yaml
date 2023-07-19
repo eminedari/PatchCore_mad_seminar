@@ -3,9 +3,14 @@ split_dir: ./data/splits
 target_size: !<tag:yaml.org,2002:seq> [128,128]
 batch_size: 32
 sampling_percentage: 0.1
-backbone: wideresnet50
-layers_to_extract_from: 0
 neighbour_num: 1
+
+backbone_single: ['wideresnet50']
+layers_single_bb: ['layer2','layer3']
+
+backbone_ensemble: ['wideresnet101', 'resnext101', 'densenet201']
+layers_ensemble_bb: ['0.layer2', '0.layer3', '1.layer2', '1.layer3', '2.features.denseblock2', '2.features.denseblock3']
+
 diseases: ['absent_septum', 'edema', 'enlarged_ventricles', 'mass', 'dural']
 pathologies: [
         'absent_septum',
@@ -25,3 +30,25 @@ pathologies: [
         'wml',
         'other'
     ]
+
+plot_pathology : 'resection'
+
+resection_test_image_paths: [
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_2020009.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_6000448.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_2020291.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_2020143.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_2020156.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_2020068.png",
+    "./data/fastMRI/brain_mid_png/file_brain_AXT1_202_6000382.png"
+]
+
+resection_test_mask_paths : [
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_2020009_resection_cavity_2.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_6000448_resection_cavity_4.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_2020291_resection_cavity_0.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_2020143_resection_cavity_3.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_2020156_resection_cavity_3.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_2020068_resection_cavity_1.png",
+    "./data/fastMRI/brain_mid_anno_pos_png/file_brain_AXT1_202_6000382_resection_cavity_3.png"
+]

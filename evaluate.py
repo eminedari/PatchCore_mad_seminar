@@ -9,14 +9,9 @@ logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import plotly.graph_objects as go
 import cv2
 import numpy as np
-#
-from torch.nn import L1Loss
-#
-from skimage.metrics import structural_similarity as ssim
 
 from skimage import exposure
-#
-import lpips
+
 import copy
 
 
@@ -25,15 +20,14 @@ class Evaluator:
     Federated Downstream Tasks
         - run tasks training_end, e.g. anomaly detection, reconstruction fidelity, disease classification, etc..
     """
-    def __init__(self, model, device, test_data_dict):
+    def __init__(self, model, device, test_data_dict, result_collect):
         # super(Evaluator, self).__init__(model, device, test_data_dict)
         super(Evaluator, self).__init__()
 
         self.model = model
-        self.device = model.device
+        self.device = device
         self.test_data_dict = test_data_dict
-        self.criterion_rec = L1Loss().to(device)
-        self.l_pips_sq = lpips.LPIPS(pretrained=True, net='squeeze', use_dropout=True, eval_mode=True, spatial=True, lpips=True).to(device)
+        self.result_collect = result_collect
 
     def evaluate(self):
         """
@@ -43,26 +37,16 @@ class Evaluator:
         :param global_model:
             Global parameters
         """
-        logging.info("################ Object Localzation TEST #################")
-        lpips_alex = lpips.LPIPS(net='alex')  # best forward scores
-        # self.model.load_state_dict(global_model)
-        self.model.eval()
         metrics = {
-            'L1': [],
-            'LPIPS': [],
-            'SSIM': [],
             'TP': [],
             'FP': [],
             'Precision': [],
             'Recall': [],
             'F1': [],
         }
-        for dataset_key in self.test_data_dict.keys():
+        for key_num, dataset_key in enumerate(self.test_data_dict.keys()):
             dataset = self.test_data_dict[dataset_key]
             test_metrics = {
-                'L1': [],
-                'LPIPS': [],
-                'SSIM': [],
                 'TP': [],
                 'FP': [],
                 'Precision': [],
@@ -76,15 +60,13 @@ class Evaluator:
                 nr_batches, nr_slices, width, height = inputs.shape
                 neg_masks[neg_masks>0.5] = 1
                 neg_masks[neg_masks<1] = 0
-                results = self.model.detect_anomaly(inputs)
-                reconstructions = results['reconstruction']
-                anomaly_maps = results['anomaly_map']
-                anomaly_scores = results['anomaly_score']
+                anomaly_scores = self.result_collect[key_num]["scores"]
+                anomaly_maps = self.result_collect[key_num]["segmentations"]
 
                 for i in range(nr_batches):
                     count = str(idx * nr_batches + i)
                     x_i = inputs[i][0]
-                    x_rec_i = reconstructions[i][0] if reconstructions is not None else None
+                    x_rec_i =  None
                     ano_map_i = anomaly_maps[i][0].detach().numpy()
                     mask_i = masks[i][0].cpu().detach().numpy()
                     neg_mask_i = neg_masks[i][0].cpu().detach().numpy()

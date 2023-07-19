@@ -190,8 +190,6 @@ class PatchCore(torch.nn.Module):
         masks_gt = []
         with tqdm.tqdm(dataloader, desc="Inferring...", leave=False) as data_iterator:
             for image in data_iterator:
-                print("inside _predict_dataloader")
-                print(image.shape)
                 if isinstance(image, dict):
                     labels_gt.extend(image["is_anomaly"].numpy().tolist())
                     masks_gt.extend(image["mask"].numpy().tolist())
@@ -227,10 +225,6 @@ class PatchCore(torch.nn.Module):
 
             masks = self.anomaly_segmentor.convert_to_segmentation(patch_scores)
 
-            print("inside _predict")
-            print("masks", masks.shape)
-            print("image_scores", image_scores.shape)
-
         return [score for score in image_scores], [mask for mask in masks]
 
     @staticmethod
@@ -243,7 +237,7 @@ class PatchCore(torch.nn.Module):
             save_path, save_features_separately=False, prepend=prepend
         )
         patchcore_params = {
-            "backbone.name": self.backbone.name,
+            "backbone.name": self.backbone,
             "layers_to_extract_from": self.layers_to_extract_from,
             "input_shape": self.input_shape,
             "pretrain_embed_dimension": self.forward_modules[

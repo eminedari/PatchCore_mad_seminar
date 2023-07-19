@@ -19,9 +19,13 @@ def compute_imagewise_retrieval_metrics(
     fpr, tpr, thresholds = metrics.roc_curve(
         anomaly_ground_truth_labels, anomaly_prediction_weights
     )
-    auroc = metrics.roc_auc_score(
-        anomaly_ground_truth_labels, anomaly_prediction_weights
-    )
+    try:
+        auroc = metrics.roc_auc_score(
+            anomaly_ground_truth_labels, anomaly_prediction_weights
+        )
+    except ValueError:
+        auroc = 0.0
+
     return {"auroc": auroc, "fpr": fpr, "tpr": tpr, "threshold": thresholds}
 
 
@@ -65,7 +69,7 @@ def compute_pixelwise_retrieval_metrics(anomaly_segmentations, ground_truth_mask
     predictions = (flat_anomaly_segmentations >= optimal_threshold).astype(int)
     fpr_optim = np.mean(predictions > flat_ground_truth_masks)
     fnr_optim = np.mean(predictions < flat_ground_truth_masks)
-
+    
     return {
         "auroc": auroc,
         "fpr": fpr,
@@ -73,4 +77,8 @@ def compute_pixelwise_retrieval_metrics(anomaly_segmentations, ground_truth_mask
         "optimal_threshold": optimal_threshold,
         "optimal_fpr": fpr_optim,
         "optimal_fnr": fnr_optim,
+        "precision": precision,
+        "recall": recall,
+        "F1": F1_scores,
+        "predictions": predictions,
     }
